@@ -1,0 +1,5 @@
+﻿OpenProcess
+ReadProcessMemory
+GetHandleInformation
+CloseHandle
+UnDecorateSymbolName

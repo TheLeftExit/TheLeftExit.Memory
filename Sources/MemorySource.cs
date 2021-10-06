@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -11,67 +12,32 @@ namespace TheLeftExit.Memory.Sources
     /// <summary>
     /// Base class for system resources that support memory reading.
     /// </summary>
-    public abstract class MemorySource {
-        /// <summary>
-        /// When overriden, in a derived class, reads bytes from the source into an already initialized span.
-        /// </summary>
-        /// <param name="address">Memory address to start reading from.</param>
-        /// <param name="count">Amount of bytes to read.</param>
-        /// <param name="buffer">An existing span to copy memory to.</param>
-        /// <returns>Whether the read operation was successful.</returns>
-        public abstract bool ReadBytes(ulong address, nuint count, Span<byte> buffer);
+    public abstract unsafe class MemorySource {
+        public abstract bool TryRead(ulong address, int count, void* buffer);
 
-        /// <summary>
-        /// Reads a value of <typeparamref name="T"/> from the source. Returns <see cref="null"/> if unsuccessful.
-        /// </summary>
-        /// <typeparam name="T">Value type to read.</typeparam>
-        /// <param name="address">Memory address to start reading from.</param>
-        public T? Read<T>(ulong address) where T : unmanaged {
-            return TryRead<T>(address, out T result) ? result : null;
+        public bool TryRead<T>(ulong address, out T result) where T : unmanaged {
+            result = default;
+            return TryRead(address, sizeof(T), Unsafe.AsPointer(ref result));
         }
 
-        /// <summary>
-        /// Reads a value of <typeparamref name="T"/> from the source.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="address"></param>
-        /// <returns>Resulting value.</returns>
-        /// <exception cref="MemoryReadingException"></exception>
-        public unsafe T ReadValue<T>(ulong address) where T : unmanaged {
-            if (TryRead<T>(address, out T result))
+        public T? Read<T>(ulong address) where T : unmanaged =>
+            TryRead(address, out T result) ? result : null;
+
+        public T ReadValue<T>(ulong address) where T : unmanaged {
+            if (TryRead(address, out T result))
                 return result;
-            else
-                throw new MemoryReadingException(this, address, typeof(T), (nuint)sizeof(T));
+            throw new ApplicationException($"Unable to read {sizeof(T)} bytes at {address:X}");
         }
 
-        /// <summary>
-        /// Attempts to read a value of <typeparamref name="T"/> from the source.
-        /// </summary>
-        /// <typeparam name="T">Value tyoe to read.</typeparam>
-        /// <param name="address">Memory address to start reading from.</param>
-        /// <param name="result">A variable to store the result in.</param>
-        /// <returns>Whether the read operation was successful.</returns>
-        public unsafe bool TryRead<T>(ulong address, out T result) where T : unmanaged {
-            Span<byte> buffer = stackalloc byte[sizeof(T)];
-            if (ReadBytes(address, (nuint)sizeof(T), buffer)) {
-                result = Unsafe.As<byte, T>(ref buffer.GetPinnableReference());
-                return true;
-            } else {
-                result = default(T);
-                return false;
-            }
+        public bool TryRead(ulong address, int count, Span<byte> buffer) {
+            fixed (void* ptr = buffer)
+                return TryRead(address, count, ptr);
+        }
+
+        public bool TryRead(ulong address, int count, Memory<byte> buffer) {
+            using (MemoryHandle handle = buffer.Pin())
+                return TryRead(address, count, handle.Pointer);
         }
     }
 
-    public class MemoryReadingException : ApplicationException {
-        public MemorySource MemorySource { get; }
-        public ulong Address { get; }
-        public nuint Count { get; }
-        public MemoryReadingException(MemorySource source, ulong address, Type type, nuint sizeOfType) :
-            base($"Failed to read {type.Name}[{sizeOfType}] at 0x{address:X}") {
-            MemorySource = source;
-            Address = address;
-            Count = sizeOfType;
-        }
-    }
 }

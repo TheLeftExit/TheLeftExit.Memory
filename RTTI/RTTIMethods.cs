@@ -51,7 +51,7 @@ namespace TheLeftExit.Memory.RTTI {
                 UInt64 base_class_descriptor_ptr = base_address + base_class_descriptor_offset;
                 if (!source.TryRead(base_class_descriptor_ptr, out UInt32 type_descriptor_offset)) return null;
                 UInt64 type_descriptor_ptr = base_address + type_descriptor_offset;
-                if (source.ReadBytes(type_descriptor_ptr + 0x14, 59, base_class_name_buffer.Slice(1)))
+                if (source.TryRead(type_descriptor_ptr + 0x14, 59, base_class_name_buffer.Slice(1)))
                     result[i] = Undecorate(base_class_name_buffer, false);
                 else
                     result[i] = null;
@@ -79,7 +79,7 @@ namespace TheLeftExit.Memory.RTTI {
                 UInt64 base_class_ptr = base_class_array_ptr + 4 * i;
                 if (!source.TryRead(base_class_ptr, out UInt32 base_class_descriptor_ptr)) return null;
                 if (!source.TryRead(base_class_descriptor_ptr, out UInt32 type_descriptor_ptr)) return null;
-                if (source.ReadBytes(type_descriptor_ptr + 0x0C, 59, base_class_name_buffer.Slice(1)))
+                if (source.TryRead(type_descriptor_ptr + 0x0C, 59, base_class_name_buffer.Slice(1)))
                     result[i] = Undecorate(base_class_name_buffer, true);
                 else
                     result[i] = null;

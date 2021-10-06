@@ -24,16 +24,15 @@ namespace TheLeftExit.Memory.Sources {
         /// Opens an full access handle to a process.
         /// </summary>
         /// <param name="processId"></param>
-        /// <exception cref="UnauthorizedAccessException"></exception>
+        /// <exception cref="ApplicationException"></exception>
         public ProcessMemory(uint processId) {
             handle = OpenProcess(processId);
             if (handle.IsNull)
-                throw new UnauthorizedAccessException($"Unable to open processId {processId}.");
+                throw new ApplicationException($"Unable to open processId {processId}.");
         }
 
-        public override unsafe bool ReadBytes(ulong address, nuint count, Span<byte> buffer) {
-            fixed(byte* p = buffer)
-                return Kernel32.ReadProcessMemory(handle, (void*)address, p, count);
+        public override unsafe bool TryRead(ulong address, int count, void* buffer) {
+            return Kernel32.ReadProcessMemory(handle, (void*)address, buffer, (nuint)count);
         }
 
         protected HANDLE OpenProcess(uint id) =>

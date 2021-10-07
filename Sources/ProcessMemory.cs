@@ -14,38 +14,29 @@ using Windows.Win32.Foundation;
 using Windows.Win32.System.Threading;
 
 namespace TheLeftExit.Memory.Sources {
-    /// <summary>
-    /// <see cref="MemorySource"/> over a process's memory.
-    /// </summary>
     public class ProcessMemory : MemorySource, IDisposable {
-        protected HANDLE handle;
+        public readonly uint Id;
+        public readonly IntPtr Handle;
+        public readonly uint ProcessAccessRights;
+        public readonly bool InheritHandle;
 
-        /// <summary>
-        /// Opens an full access handle to a process.
-        /// </summary>
-        /// <param name="processId"></param>
-        /// <exception cref="ApplicationException"></exception>
-        public ProcessMemory(uint processId) {
-            handle = OpenProcess(processId);
+        internal HANDLE handle;
+
+        public ProcessMemory(uint processId, uint rights = (uint)PROCESS_ACCESS_RIGHTS.PROCESS_ALL_ACCESS, bool inheritHandle = true) {
+            Id = processId;
+            ProcessAccessRights = (uint)rights;
+            InheritHandle = inheritHandle;
+            handle = Kernel32.OpenProcess((PROCESS_ACCESS_RIGHTS)rights, inheritHandle, Id);
             if (handle.IsNull)
-                throw new ApplicationException($"Unable to open processId {processId}.");
+                throw new ApplicationException($"Unable to open processId {Id}.");
+            Handle = handle.Value;
         }
 
-        public override unsafe bool TryRead(ulong address, int count, void* buffer) {
-            return Kernel32.ReadProcessMemory(handle, (void*)address, buffer, (nuint)count);
-        }
+        public override unsafe bool TryRead(ulong address, int count, void* buffer) =>
+            Kernel32.ReadProcessMemory(handle, (void*)address, buffer, (nuint)count);
 
-        protected HANDLE OpenProcess(uint id) =>
-            Kernel32.OpenProcess(PROCESS_ACCESS_RIGHTS.PROCESS_ALL_ACCESS, false, id);
-
-        protected BOOL CloseProcess(HANDLE pHandle) =>
-            Kernel32.CloseHandle(pHandle);
-
-        /// <summary>
-        /// Closes the process handle.
-        /// </summary>
         public void Dispose() {
-            CloseProcess(handle);
+            Kernel32.CloseHandle(handle);
         }
     }
 }

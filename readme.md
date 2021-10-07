@@ -7,35 +7,46 @@ Available as a [NuGet package](https://www.nuget.org/packages/TheLeftExit.Memory
 
 ### Overview of API
 #### `TheLeftExit.Memory.Sources`
-##### `MemorySource`
+##### `MemorySource` & `LocalMemorySource`
 ```cs
 public abstract class MemorySource {
-	public abstract bool ReadBytes(ulong address, nuint count, Span<byte> buffer);
-	
+	public abstract bool TryRead(ulong address, int count, void* buffer);
 	public bool TryRead<T>(ulong address, out T result) where T : unmanaged;
+	public bool TryRead<T>(ulong address, Span<T> buffer) where T : unmanaged;
+
 	public T? Read<T>(ulong address) where T : unmanaged;
 	public T ReadValue<T>(ulong address) where T : unmanaged;
+
+	public bool IsLocal => this is LocalMemorySource;
+}
+
+public abstract class LocalMemorySource : MemorySource {
+	public abstract void* GetReference(ulong address);
+	public ref T Get<T>(ulong address) where T : unmanaged;
+	public Span<T> Slice<T>(ulong address, int count) where T : unmanaged;
+
+	public abstract bool Contains(ulong address, int count); // Used by MemorySource logic.
 }
 ```
-None of the `MemorySource` methods allocate memory on the heap, or invoke any type-specific conversion logic.
+`MemorySource` is designed for remote memory sources, while `LocalMemorySource` works with memory allocated by your program.
 
-You can use those methods to read directly into primitive types, structures containing primitive types, or even tuples:  
-```(float X, float Y) Position = source.ReadValue<(float, float)>(address);```
+None of these classes' methods allocate memory on the heap, or invoke any type-specific conversion logic.
 
 ##### `ProcessMemory`
 ```cs
 public class ProcessMemory : MemorySource, IDisposable {
-	public ProcessMemory(uint processId);
+	public readonly IntPtr Handle;
+
+	public readonly uint Id;
+	public readonly uint ProcessAccessRights;
+	public readonly bool InheritHandle;
+
+	public ProcessMemory(uint processId); // Optional parameters not listed.
 	public void Dispose();
 }
 ```
-##### `StoredMemory`
-```cs
-public class StoredMemory : MemorySource {
-	public StoredMemory(byte[] source);
-}
-```
-These are just a few possible implementations of `MemorySource` - you can inherit any of the classes listed to manually enable features like remote memory reading or caching.
+Creating a `MemorySource` over a process allows you to read data directly into primitive types, structures, or even tuples:  
+```(float X, float Y) Position = source.ReadValue<(float, float)>(address);```
 
 #### `TheLeftExit.Memory.RTTI`
 ##### `RTTIMethods`

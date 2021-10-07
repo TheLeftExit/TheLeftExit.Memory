@@ -9,35 +9,52 @@ using System.Threading.Tasks;
 
 namespace TheLeftExit.Memory.Sources
 {
-    /// <summary>
-    /// Base class for system resources that support memory reading.
-    /// </summary>
-    public abstract unsafe class MemorySource {
+    // Copy-based operations on remote memory.
+    public unsafe abstract class MemorySource {
         public abstract bool TryRead(ulong address, int count, void* buffer);
 
         public bool TryRead<T>(ulong address, out T result) where T : unmanaged {
-            result = default;
-            return TryRead(address, sizeof(T), Unsafe.AsPointer(ref result));
+            fixed (void* ptr = &result)
+                return TryRead(address, sizeof(T), ptr);
+        }
+        public bool TryRead<T>(ulong address, Span<T> buffer) where T : unmanaged {
+            fixed (void* ptr = buffer)
+                return TryRead(address, buffer.Length * sizeof(T), ptr);
         }
 
-        public T? Read<T>(ulong address) where T : unmanaged =>
-            TryRead(address, out T result) ? result : null;
+        public bool IsLocal => this is LocalMemorySource;
+
+        public T? Read<T>(ulong address) where T : unmanaged {
+            return TryRead(address, out T result) ? result : null;
+        }
 
         public T ReadValue<T>(ulong address) where T : unmanaged {
             if (TryRead(address, out T result))
                 return result;
-            throw new ApplicationException($"Unable to read {sizeof(T)} bytes at {address:X}");
-        }
-
-        public bool TryRead(ulong address, int count, Span<byte> buffer) {
-            fixed (void* ptr = buffer)
-                return TryRead(address, count, ptr);
-        }
-
-        public bool TryRead(ulong address, int count, Memory<byte> buffer) {
-            using (MemoryHandle handle = buffer.Pin())
-                return TryRead(address, count, handle.Pointer);
+            throw new ApplicationException($"Unable to read at {address:X}");
         }
     }
+    
+    // Reference-based operations on memory allocated by the program.
+    public unsafe abstract class LocalMemorySource : MemorySource {
+        public abstract bool Contains(ulong address, int count);
 
+        public abstract void* GetReference(ulong address);
+
+        public ref T Get<T>(ulong address) where T : unmanaged {
+            return ref Unsafe.AsRef<T>(GetReference(address));
+        }
+
+        public Span<T> Slice<T>(ulong address, int count) where T : unmanaged {
+            return new Span<T>(GetReference(address), count);
+        }
+
+        public override bool TryRead(ulong address, int count, void* buffer) {
+            if (Contains(address, count)) {
+                Unsafe.CopyBlock(buffer, GetReference(address), (uint)count);
+                return true;
+            }
+            return false;
+        }
+    }
 }

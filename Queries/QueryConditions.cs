@@ -10,7 +10,7 @@ namespace TheLeftExit.Memory.Queries {
     public static class Conditions {
         public static PointerQueryCondition AOB(params Byte?[] pattern) => (MemorySource source, UInt64 addr) => {
             Span<Byte> buffer = stackalloc Byte[pattern.Length];
-            if (!source.TryRead(addr, buffer.Length, buffer))
+            if (!source.TryRead(addr, buffer))
                 return PointerQueryConditionResult.Break;
             for (int i = 0; i < buffer.Length; i++)
                 if (pattern[i].HasValue && pattern[i] != buffer[i])

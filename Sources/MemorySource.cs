@@ -33,8 +33,27 @@ namespace TheLeftExit.Memory.Sources {
         }
     }
 
+    // Writing operations on remote memory.
+    public unsafe abstract class WriteableMemorySource : MemorySource {
+        public abstract bool TryWrite(ulong address, int count, void* buffer);
+
+        public bool TryWrite<T>(ulong address, T value) where T : unmanaged {
+            return TryWrite(address, sizeof(T), &value);
+        }
+
+        public bool TryWrite<T>(ulong address, ref T value) where T : unmanaged {
+            fixed (void* ptr = &value)
+                return TryWrite(address, sizeof(T), ptr);
+        }
+
+        public bool TryWrite<T>(ulong address, Span<T> buffer) where T : unmanaged {
+            fixed (void* ptr = buffer)
+                return TryWrite(address, buffer.Length * sizeof(T), ptr);
+        }
+    }
+
     // Reference-based operations on memory allocated by the program.
-    public unsafe abstract class LocalMemorySource : MemorySource {
+    public unsafe abstract class LocalMemorySource : WriteableMemorySource {
         public abstract bool Contains(ulong address, int count);
 
         public abstract void* GetReference(ulong address);
@@ -54,24 +73,13 @@ namespace TheLeftExit.Memory.Sources {
             }
             return false;
         }
-    }
 
-    // Writing operations on remote memory.
-    public unsafe abstract class WriteableMemorySource : MemorySource {
-        public abstract bool TryWrite(ulong address, int count, void* buffer);
-
-        public bool TryWrite<T>(ulong address, T value) where T : unmanaged {
-            return TryWrite(address, sizeof(T), &value);
-        }
-
-        public bool TryWrite<T>(ulong address, ref T value) where T : unmanaged {
-            fixed (void* ptr = &value)
-                return TryWrite(address, sizeof(T), ptr);
-        }
-
-        public bool TryWrite<T>(ulong address, Span<T> buffer) where T : unmanaged {
-            fixed (void* ptr = buffer)
-                return TryWrite(address, buffer.Length * sizeof(T), ptr);
+        public override unsafe bool TryWrite(ulong address, int count, void* buffer) {
+            if(Contains(address, count)) {
+                Unsafe.CopyBlock(GetReference(address), buffer, (uint)count);
+                return true;
+            }
+            return false;
         }
     }
 }

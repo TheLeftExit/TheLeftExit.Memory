@@ -1,13 +1,13 @@
 ﻿### TheLeftExit.Memory
 One of the many libraries focused on reading process memory.
 
-**TheLeftExit.Memory** is designed to be compact, fast and memory-efficient, making use of unsafe context, and latest .NET features such as [spans](https://docs.microsoft.com/en-us/dotnet/api/system.span-1) or [Win32 API source generation](https://github.com/microsoft/CsWin32).
+**TheLeftExit.Memory** is designed to be compact, fast and memory-efficient, making extensive use of unsafe context.
 
 Available as a [NuGet package](https://www.nuget.org/packages/TheLeftExit.Memory/).
 
 ### Overview of API
 #### `TheLeftExit.Memory.Sources`
-##### `MemorySource` & `LocalMemorySource`
+##### `MemorySource`
 ```cs
 public abstract class MemorySource {
 	public abstract bool TryRead(ulong address, int count, void* buffer);
@@ -16,25 +16,33 @@ public abstract class MemorySource {
 
 	public T? Read<T>(ulong address) where T : unmanaged;
 	public T ReadValue<T>(ulong address) where T : unmanaged;
-
-	public bool IsLocal => this is LocalMemorySource;
 }
 
-public abstract class LocalMemorySource : MemorySource {
+public abstract class WriteableMemorySource : MemorySource {
+	public abstract bool TryWrite(ulong address, int count, void* buffer);
+	public bool TryWrite<T>(ulong address, T value) where T : unmanaged;
+	public bool TryWrite<T>(ulong address, ref T value) where T : unmanaged;
+	public bool TryWrite<T>(ulong address, Span<T> buffer) where T : unmanaged;
+}
+
+public abstract class LocalMemorySource : WriteableMemorySource {
 	public abstract void* GetReference(ulong address);
 	public ref T Get<T>(ulong address) where T : unmanaged;
 	public Span<T> Slice<T>(ulong address, int count) where T : unmanaged;
 
-	public abstract bool Contains(ulong address, int count); // Used by MemorySource logic.
+	// Compatibility with WriteableMemorySource (not recommended to call directly).
+	public abstract bool Contains(ulong address, int count);
+	public override bool TryRead(ulong address, int count, void* buffer);
+	public override bool TryWrite(ulong address, int count, void* buffer);
 }
 ```
-`MemorySource` is designed for remote memory sources, while `LocalMemorySource` works with memory allocated by your program.
+`MemorySource`/`WriteableMemorySource` are designed for remote memory sources, while `LocalMemorySource` works with memory allocated by your program.
 
 None of these classes' methods allocate memory on the heap, or invoke any type-specific conversion logic.
 
 ##### `ProcessMemory`
 ```cs
-public class ProcessMemory : MemorySource, IDisposable {
+public class ProcessMemory : WriteableMemorySource, IDisposable {
 	public readonly IntPtr Handle;
 
 	public readonly uint Id;
@@ -45,7 +53,7 @@ public class ProcessMemory : MemorySource, IDisposable {
 	public void Dispose();
 }
 ```
-Creating a `MemorySource` over a process allows you to read data directly into primitive types, structures, or even tuples:  
+Creating a `WriteableMemorySource` over a process allows you to read or write data as primitive types, structures, or even tuples:  
 ```(float X, float Y) Position = source.ReadValue<(float, float)>(address);```
 
 #### `TheLeftExit.Memory.RTTI`

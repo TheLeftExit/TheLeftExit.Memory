@@ -1,5 +1,6 @@
 ﻿OpenProcess
 ReadProcessMemory
+WriteProcessMemory
 GetHandleInformation
 CloseHandle
 UnDecorateSymbolName

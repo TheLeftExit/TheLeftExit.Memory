@@ -14,7 +14,7 @@ using Windows.Win32.Foundation;
 using Windows.Win32.System.Threading;
 
 namespace TheLeftExit.Memory.Sources {
-    public class ProcessMemory : MemorySource, IDisposable {
+    public class ProcessMemory : WriteableMemorySource, IDisposable {
         public readonly uint Id;
         public readonly IntPtr Handle;
         public readonly uint ProcessAccessRights;
@@ -34,6 +34,10 @@ namespace TheLeftExit.Memory.Sources {
 
         public override unsafe bool TryRead(ulong address, int count, void* buffer) =>
             Kernel32.ReadProcessMemory(handle, (void*)address, buffer, (nuint)count);
+
+        public override unsafe bool TryWrite(ulong address, int count, void* buffer) =>
+            Kernel32.WriteProcessMemory(handle, (void*)address, buffer, (nuint)count);
+
 
         public void Dispose() {
             Kernel32.CloseHandle(handle);

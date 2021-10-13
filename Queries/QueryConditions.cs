@@ -33,10 +33,5 @@ namespace TheLeftExit.Memory.Queries {
                 return PointerQueryConditionResult.Return;
             return PointerQueryConditionResult.Continue;
         };
-
-        public static PointerQueryCondition Forgive(this PointerQueryCondition condition) => (MemorySource source, UInt64 addr) => {
-            PointerQueryConditionResult res = condition(source, addr);
-            return res == PointerQueryConditionResult.Break ? PointerQueryConditionResult.Continue : res;
-        };
     }
 }

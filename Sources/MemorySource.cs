@@ -54,32 +54,17 @@ namespace TheLeftExit.Memory.Sources {
 
     // Reference-based operations on memory allocated by the program.
     public unsafe abstract class LocalMemorySource : WriteableMemorySource {
+        public abstract Span<T> Slice<T>(ulong address, int count) where T : unmanaged;
+
+        public ref T ReadRef<T>(ulong address) where T : unmanaged {
+            return ref Slice<T>(address, 1).GetPinnableReference();
+        }
+
+        // WriteableMemorySource compatibility.
         public abstract bool Contains(ulong address, int count);
-
-        public abstract void* GetReference(ulong address);
-
-        public ref T Get<T>(ulong address) where T : unmanaged {
-            return ref Unsafe.AsRef<T>(GetReference(address));
-        }
-
-        public Span<T> Slice<T>(ulong address, int count) where T : unmanaged {
-            return new Span<T>(GetReference(address), count);
-        }
-
-        public override bool TryRead(ulong address, int count, void* buffer) {
-            if (Contains(address, count)) {
-                Unsafe.CopyBlock(buffer, GetReference(address), (uint)count);
-                return true;
-            }
-            return false;
-        }
-
-        public override unsafe bool TryWrite(ulong address, int count, void* buffer) {
-            if(Contains(address, count)) {
-                Unsafe.CopyBlock(GetReference(address), buffer, (uint)count);
-                return true;
-            }
-            return false;
-        }
+        public override bool TryRead(ulong address, int count, void* buffer) =>
+            Contains(address, count) && Slice<byte>(address, count).TryCopyTo(new Span<byte>(buffer, count));
+        public override unsafe bool TryWrite(ulong address, int count, void* buffer) =>
+            Contains(address, count) && new Span<byte>(buffer, count).TryCopyTo(Slice<byte>(address, count));
     }
 }

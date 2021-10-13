@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using TheLeftExit.Memory.Sources;
 
 namespace TheLeftExit.Memory.Queries {
-    public class PointerQuery {
+    public struct PointerQuery {
         private PointerQueryCondition condition;
         private UInt32 range;
         private SByte step;
@@ -27,7 +27,7 @@ namespace TheLeftExit.Memory.Queries {
                     Offset = null;
             }
             if (options == PointerQueryOptions.ForceNew || !Offset.HasValue) {
-                Offset = run(source, baseAddress);
+                Offset = Run(source, baseAddress);
             }
             if (Offset.HasValue) {
                 UInt32 offsetAbs = (uint)Math.Abs(Offset.Value);
@@ -42,7 +42,7 @@ namespace TheLeftExit.Memory.Queries {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private Int64? run(MemorySource source, UInt64 baseAddress) {
+        private Int64? Run(MemorySource source, UInt64 baseAddress) {
             Byte stepAbs = (Byte)Math.Abs(step);
             bool scanForward = step > 0;
             for (UInt32 offset = 0; offset <= range; offset += stepAbs) {

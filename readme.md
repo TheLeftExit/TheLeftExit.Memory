@@ -26,9 +26,8 @@ public abstract class WriteableMemorySource : MemorySource {
 }
 
 public abstract class LocalMemorySource : WriteableMemorySource {
-	public abstract void* GetReference(ulong address);
-	public ref T Get<T>(ulong address) where T : unmanaged;
-	public Span<T> Slice<T>(ulong address, int count) where T : unmanaged;
+	public abstract Span<T> Slice<T>(ulong address, int count) where T : unmanaged;
+	public ref T ReadRef<T>(ulong address) where T : unmanaged;
 
 	// Compatibility with WriteableMemorySource (not recommended to call directly).
 	public abstract bool Contains(ulong address, int count);
@@ -53,8 +52,24 @@ public class ProcessMemory : WriteableMemorySource, IDisposable {
 	public void Dispose();
 }
 ```
-Creating a `WriteableMemorySource` over a process allows you to read or write data as primitive types, structures, or even tuples:  
+A `WriteableMemorySource` over a process that allows you to read or write data as primitive types, structures, or even tuples:  
 ```(float X, float Y) Position = source.ReadValue<(float, float)>(address);```
+
+##### `CachedMemory`
+```cs
+public class CachedMemory : LocalMemorySource {}
+	public ulong BaseAddress { get; }
+	public int Size { get; }
+	public Memory<byte> Memory { get; }
+
+	public CachedMemory(ulong baseAddress, int size);
+	public CachedMemory.Handle Pin(); // Disposable wrapper for MemoryHandle.
+
+	public override Span<T> Slice<T>(ulong address, int count);
+	public override bool Contains(ulong address, int count);
+}
+```
+A `LocalMemorySource` over `Memory<byte>` that allows you to store and access memory regions for complex operations, as well as cache process memory for use with existing `MemorySource` logic.
 
 #### `TheLeftExit.Memory.RTTI`
 ##### `RTTIMethods`
@@ -92,3 +107,28 @@ public static class QueryConditions {
 }
 ```
 Provides a list of preconfigured delegates to use as `PointerQuery` conditions.
+
+#### `TheLeftExit.Memory.ObjectModel`
+##### `IObjectModelStructure`
+```cs
+public interface IObjectModelStructure {
+	public ulong BaseAddress { get; init; }
+	public MemorySource Source { get; init; }
+	public int Size { get; }
+}
+
+public static class ObjectModelExtensions {
+	public static T Cache<T>(this T structure)
+		where T : IObjectModelStructure, new();
+
+	public static TTo BranchByVal<TFrom, TTo>(this TFrom root, PointerQuery query)
+		where TFrom : IObjectModelStructure
+		where TTo: IObjectModelStructure;
+
+	public static TTo BranchByRef<TFrom, TTo>(this TFrom root, PointerQuery query)
+		where TFrom : IObjectModelStructure
+		where TTo: IObjectModelStructure;
+}
+```
+
+Allows transcription of other programs' structure hierarchies in memory into C#.

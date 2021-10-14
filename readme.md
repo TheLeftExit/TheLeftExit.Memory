@@ -5,7 +5,7 @@ One of the many libraries focused on reading process memory.
 
 Available as a [NuGet package](https://www.nuget.org/packages/TheLeftExit.Memory/).
 
-### Overview of API
+### Main features
 #### `TheLeftExit.Memory.Sources`
 ##### `MemorySource`
 ```cs
@@ -85,50 +85,5 @@ In fact, those methods have been transcribed from [ReClass.NET's source](https:/
 
 To learn more about this technology, visit http://www.openrce.org/articles/full_view/23
 
-#### `TheLeftExit.Memory.Queries`
-##### `PointerQuery`
-```cs
-public class PointerQuery {
-	public Int64? Offset { get; set; }
-	public PointerQuery(PointerQueryCondition queryCondition, uint maxOffset, sbyte scanStep);
-	public PointerQueryResult? GetResult(MemorySource source, ulong baseAddress);
-}
-
-public delegate PointerQueryConditionResult PointerQueryCondition(MemorySource memorySource, ulong address);
-public enum PointerQueryConditionResult { Continue, Return, Break }
-```
-Allows you to scan a `MemorySource` for values matching specific condition. More on conditions below.
-##### `QueryConditions`
-```cs
-public static class QueryConditions {
-	public static PointerQueryCondition AOB(params Byte?[] pattern);
-	public static PointerQueryCondition RTTIByRef(string name);
-	public static PointerQueryCondition RTTIByVal(string name);
-}
-```
-Provides a list of preconfigured delegates to use as `PointerQuery` conditions.
-
-#### `TheLeftExit.Memory.ObjectModel`
-##### `IObjectModelStructure`
-```cs
-public interface IObjectModelStructure {
-	public ulong BaseAddress { get; init; }
-	public MemorySource Source { get; init; }
-	public int Size { get; }
-}
-
-public static class ObjectModelExtensions {
-	public static T Cache<T>(this T structure)
-		where T : IObjectModelStructure, new();
-
-	public static TTo BranchByVal<TFrom, TTo>(this TFrom root, PointerQuery query)
-		where TFrom : IObjectModelStructure
-		where TTo: IObjectModelStructure;
-
-	public static TTo BranchByRef<TFrom, TTo>(this TFrom root, PointerQuery query)
-		where TFrom : IObjectModelStructure
-		where TTo: IObjectModelStructure;
-}
-```
-
-Allows transcription of other programs' structure hierarchies in memory into C#.
+---
+There's more stuff, but it's mostly specific to my own needs.

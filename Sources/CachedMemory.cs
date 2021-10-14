@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace TheLeftExit.Memory.Sources {
     public unsafe class CachedMemory : LocalMemorySource {
-        public ulong BaseAddress { get; }
-        public int Size { get; }
-        public Memory<byte> Memory { get; }
+        public readonly ulong BaseAddress;
+        public readonly int Size;
+        public readonly Memory<byte> Memory;
 
         protected byte* pointer;
 
@@ -34,6 +34,7 @@ namespace TheLeftExit.Memory.Sources {
             }
             public void Dispose() {
                 memorySource.pointer = null;
+                memoryHandle.Dispose();
             }
         }
 
@@ -41,8 +42,7 @@ namespace TheLeftExit.Memory.Sources {
             int offset = (int)(address - BaseAddress);
             if (pointer != null)
                 return new Span<T>(pointer + offset, count);
-            using (MemoryHandle handle = Memory.Pin())
-                return new Span<T>(Unsafe.Add<byte>(handle.Pointer, offset), count);
+            return MemoryMarshal.CreateSpan(ref Unsafe.As<byte, T>(ref Memory.Span[offset]), count);
         }
 
         public override bool Contains(ulong address, int count) =>

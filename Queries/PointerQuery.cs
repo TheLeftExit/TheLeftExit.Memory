@@ -4,53 +4,51 @@ using System.Runtime.CompilerServices;
 using TheLeftExit.Memory.Sources;
 
 namespace TheLeftExit.Memory.Queries {
-    public struct PointerQuery {
-        private PointerQueryCondition condition;
-        private UInt32 range;
-        private SByte step;
+    public class PointerQuery {
+        private Condition condition;
+        private uint range;
+        private byte step;
+        private bool forward;
 
-        public Int64? Offset { get; set; }
+        public int? Offset { get; set; }
 
-        public PointerQuery(PointerQueryCondition queryCondition, UInt32 maxOffset, SByte scanStep, Int64? offset = null) {
+        public PointerQuery(Condition queryCondition, uint maxOffset, byte scanStep, bool scanForward = true) {
             if (queryCondition == null || scanStep == 0)
                 throw new ArgumentException();
             condition = queryCondition;
-            range = maxOffset;
             step = scanStep;
-            Offset = offset;
+            range = maxOffset;
+            forward = scanForward;
         }
 
-        public PointerQueryResult? GetResult(MemorySource source, UInt64 baseAddress, PointerQueryOptions options = PointerQueryOptions.ValidateCached) {
-            if (options == PointerQueryOptions.ValidateCached && Offset.HasValue) {
-                PointerQueryConditionResult result = condition(source, applyOffset(baseAddress, Offset.Value));
-                if (result != PointerQueryConditionResult.Return)
+        public PointerQuery(SimpleCondition queryCondition, uint maxOffset, byte scanStep, bool scanForward = true) :
+            this(ConvertCondition(queryCondition), maxOffset, scanStep, scanForward) { }
+
+        public ulong? GetResult(MemorySource source, UInt64 baseAddress, Options options = Options.ValidateCached) {
+            if (options == Options.ValidateCached && Offset.HasValue) {
+                ConditionResult result = condition(source, applyOffset(baseAddress, Offset.Value));
+                if (result != ConditionResult.Return)
                     Offset = null;
             }
-            if (options == PointerQueryOptions.ForceNew || !Offset.HasValue) {
+            if (options == Options.ForceNew || !Offset.HasValue) {
                 Offset = Run(source, baseAddress);
             }
             if (Offset.HasValue) {
-                UInt32 offsetAbs = (uint)Math.Abs(Offset.Value);
-                bool scanForward = Offset.Value > 0;
-                UInt64 newTarget = scanForward ? baseAddress + offsetAbs : baseAddress - offsetAbs;
-                return new PointerQueryResult() {
-                    Target = newTarget,
-                    Offset = Offset.Value
-                };
-            } else
-                return null;
+                uint offsetAbs = (uint)Math.Abs(Offset.Value);
+                ulong newTarget = forward ? baseAddress + offsetAbs : baseAddress - offsetAbs;
+                return newTarget;
+            }
+            return null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private Int64? Run(MemorySource source, UInt64 baseAddress) {
-            Byte stepAbs = (Byte)Math.Abs(step);
-            bool scanForward = step > 0;
-            for (UInt32 offset = 0; offset <= range; offset += stepAbs) {
-                UInt64 targetAddress = scanForward ? baseAddress + offset : baseAddress - offset;
-                PointerQueryConditionResult result = condition(source, targetAddress);
-                if (result == PointerQueryConditionResult.Return)
-                    return scanForward ? offset : -offset;
-                else if (result == PointerQueryConditionResult.Break)
+        private int? Run(MemorySource source, UInt64 baseAddress) {
+            for (ushort offset = 0; offset <= range; offset += step) {
+                ulong targetAddress = forward ? baseAddress + offset : baseAddress - offset;
+                ConditionResult result = condition(source, targetAddress);
+                if (result == ConditionResult.Return) {
+                    return forward ? offset : -offset;
+                } else if (result == ConditionResult.Break)
                     break;
             }
             return null;
@@ -62,42 +60,40 @@ namespace TheLeftExit.Memory.Queries {
             bool scanForward = delta > 0;
             return scanForward ? baseAddress + deltaAbs : baseAddress - deltaAbs;
         }
-    }
 
-    public delegate PointerQueryConditionResult PointerQueryCondition(MemorySource memorySource, UInt64 address);
+        public enum Options {
+            /// <summary>
+            /// Use the cached offset without validating it, unless it's empty.
+            /// </summary>
+            ForceCached,
+            /// <summary>
+            /// Invalidate the cached offset, forcing a new scan.
+            /// </summary>
+            ForceNew,
+            /// <summary>
+            /// Check the cached offset before using it; if it doesn't match, invalidate it, forcing a new scan.
+            /// </summary>
+            ValidateCached,
+        }
 
-    public enum PointerQueryConditionResult {
-        /// <summary>
-        /// Treat the result as not matching the condition, continue scanning.
-        /// </summary>
-        Continue,
-        /// <summary>
-        /// Treat the result as matching the condition, return its address and offset.
-        /// </summary>
-        Return,
-        /// <summary>
-        /// Interrupt the scan, return null.
-        /// </summary>
-        Break
-    }
+        public enum ConditionResult {
+            /// <summary>
+            /// Treat the result as not matching the condition, continue scanning.
+            /// </summary>
+            Continue,
+            /// <summary>
+            /// Treat the result as matching the condition, return its address and offset.
+            /// </summary>
+            Return,
+            /// <summary>
+            /// Interrupt the scan, return null.
+            /// </summary>
+            Break
+        }
 
-    public enum PointerQueryOptions {
-        /// <summary>
-        /// Use the cached offset without validating it, unless it's empty.
-        /// </summary>
-        ForceCached,
-        /// <summary>
-        /// Invalidate the cached offset, forcing a new scan.
-        /// </summary>
-        ForceNew,
-        /// <summary>
-        /// Check the cached offset before using it; if it doesn't match, invalidate it, forcing a new scan.
-        /// </summary>
-        ValidateCached,
-    }
-
-    public struct PointerQueryResult {
-        public UInt64 Target { get; init; }
-        public Int64 Offset { get; init; }
+        public delegate ConditionResult Condition(MemorySource memorySource, ulong address);
+        public delegate bool SimpleCondition(MemorySource memorySource, ulong address);
+        private static Condition ConvertCondition(SimpleCondition condition) =>
+            (ms, ba) => condition(ms, ba) ? ConditionResult.Return : ConditionResult.Continue;
     }
 }

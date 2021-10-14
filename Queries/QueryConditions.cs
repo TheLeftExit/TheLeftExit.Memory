@@ -8,30 +8,37 @@ using TheLeftExit.Memory.Sources;
 
 namespace TheLeftExit.Memory.Queries {
     public static class Conditions {
-        public static PointerQueryCondition AOB(params Byte?[] pattern) => (MemorySource source, UInt64 addr) => {
-            Span<Byte> buffer = stackalloc Byte[pattern.Length];
-            if (!source.TryRead(addr, buffer))
-                return PointerQueryConditionResult.Break;
+        public static PointerQuery.Condition AOB(params Byte?[] pattern) => (MemorySource source, UInt64 addr) => {
+            LocalMemorySource localSource = source as LocalMemorySource;
+            Span<byte> buffer = stackalloc byte[pattern.Length];
+            if (localSource != null) {
+                if (!localSource.Contains(addr, pattern.Length))
+                    return PointerQuery.ConditionResult.Break;
+                buffer = localSource.Slice<byte>(addr, pattern.Length);
+            } else {
+                if (!source.TryRead(addr, buffer))
+                    return PointerQuery.ConditionResult.Break;
+            }
             for (int i = 0; i < buffer.Length; i++)
                 if (pattern[i].HasValue && pattern[i] != buffer[i])
-                    return PointerQueryConditionResult.Continue;
-            return PointerQueryConditionResult.Return;
+                    return PointerQuery.ConditionResult.Continue;
+            return PointerQuery.ConditionResult.Return;
         };
 
-        public static PointerQueryCondition RTTIByRef(string name) => (MemorySource source, UInt64 addr) => {
+        public static PointerQuery.Condition RTTIByRef(string name) => (MemorySource source, UInt64 addr) => {
             if (!source.TryRead(addr, out UInt64 target))
-                return PointerQueryConditionResult.Break;
+                return PointerQuery.ConditionResult.Break;
             if (source.GetRTTIClassNames64(target)?.Contains(name) ?? false)
-                return PointerQueryConditionResult.Return;
-            return PointerQueryConditionResult.Continue;
+                return PointerQuery.ConditionResult.Return;
+            return PointerQuery.ConditionResult.Continue;
         };
 
-        public static PointerQueryCondition RTTIByVal(string name) => (MemorySource source, UInt64 addr) => {
+        public static PointerQuery.Condition RTTIByVal(string name) => (MemorySource source, UInt64 addr) => {
             if (!source.TryRead<Byte>(addr, out _))
-                return PointerQueryConditionResult.Break;
+                return PointerQuery.ConditionResult.Break;
             if (source.GetRTTIClassNames64(addr)?.Contains(name) ?? false)
-                return PointerQueryConditionResult.Return;
-            return PointerQueryConditionResult.Continue;
+                return PointerQuery.ConditionResult.Return;
+            return PointerQuery.ConditionResult.Continue;
         };
     }
 }

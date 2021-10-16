@@ -43,11 +43,11 @@ namespace TheLeftExit.Memory.Queries {
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private int? Run(MemorySource source, UInt64 baseAddress) {
-            for (ushort offset = 0; offset <= range; offset += step) {
+            for (uint offset = 0; offset <= range; offset += step) {
                 ulong targetAddress = forward ? baseAddress + offset : baseAddress - offset;
                 ConditionResult result = condition(source, targetAddress);
                 if (result == ConditionResult.Return) {
-                    return forward ? offset : -offset;
+                    return forward ? (int)offset : -(int)offset;
                 } else if (result == ConditionResult.Break)
                     break;
             }

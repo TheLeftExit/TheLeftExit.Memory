@@ -47,7 +47,7 @@ namespace TheLeftExit.Memory.ObjectModel {
         where TFrom : IObjectModelStructure
         where TTo : IObjectModelStructure, new() {
             ulong? result = query.GetResult(root.Source, root.BaseAddress, options);
-            if (!result.HasValue || root.Source.TryRead(result.Value, out ulong target))
+            if (!result.HasValue || !root.Source.TryRead(result.Value, out ulong target))
                 throw new ApplicationException();
             return new TTo {
                 BaseAddress = target,

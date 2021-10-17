@@ -1,6 +1,4 @@
-﻿#pragma warning disable CA1416
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28,7 +26,7 @@ namespace TheLeftExit.Memory.Sources {
             InheritHandle = inheritHandle;
             handle = Kernel32.OpenProcess((PROCESS_ACCESS_RIGHTS)rights, inheritHandle, Id);
             if (handle.IsNull)
-                throw new ApplicationException($"Unable to open processId {Id}.");
+                throw new ApplicationException($"Unable to open processId {Id} (process not open or access denied).");
             Handle = handle.Value;
         }
 
@@ -37,7 +35,6 @@ namespace TheLeftExit.Memory.Sources {
 
         public override unsafe bool TryWrite(ulong address, int count, void* buffer) =>
             Kernel32.WriteProcessMemory(handle, (void*)address, buffer, (nuint)count);
-
 
         public void Dispose() {
             Kernel32.CloseHandle(handle);

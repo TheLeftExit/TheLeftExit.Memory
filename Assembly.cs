@@ -1,0 +1,1 @@
+﻿[assembly: System.Runtime.Versioning.SupportedOSPlatform("windows5.1.2600")]

@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 
 using TheLeftExit.Memory.Sources;
+using TheLeftExit.Memory.ObjectModel;
 
 namespace TheLeftExit.Memory.Queries {
     public class PointerQuery {
@@ -24,9 +25,9 @@ namespace TheLeftExit.Memory.Queries {
         public PointerQuery(SimpleCondition queryCondition, uint maxOffset, byte scanStep, bool scanForward = true) :
             this(ConvertCondition(queryCondition), maxOffset, scanStep, scanForward) { }
 
-        public ulong? GetResult(MemorySource source, UInt64 baseAddress, Options options = Options.ValidateCached) {
+        public ulong? GetResult(MemorySource source, UInt64 baseAddress, Options options = Options.ForceCached) {
             if (options == Options.ValidateCached && Offset.HasValue) {
-                ConditionResult result = condition(source, applyOffset(baseAddress, Offset.Value));
+                ConditionResult result = condition(source, ObjectModelExtensions.ApplyOffset(baseAddress, Offset.Value));
                 if (result != ConditionResult.Return)
                     Offset = null;
             }
@@ -52,13 +53,6 @@ namespace TheLeftExit.Memory.Queries {
                     break;
             }
             return null;
-        }
-
-        // A version of "ulong + long" that doesn't confuse the compiler.
-        private UInt64 applyOffset(UInt64 baseAddress, Int64 delta) {
-            UInt32 deltaAbs = (UInt32)Math.Abs(delta);
-            bool scanForward = delta > 0;
-            return scanForward ? baseAddress + deltaAbs : baseAddress - deltaAbs;
         }
 
         public enum Options {

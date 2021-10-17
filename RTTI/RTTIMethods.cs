@@ -13,7 +13,6 @@ using TheLeftExit.Memory.Sources;
 
 namespace TheLeftExit.Memory.RTTI {
     public static unsafe class RTTIMethods {
-
         [MethodImpl(MethodImplOptions.Synchronized)]
         private static unsafe string Undecorate(byte* source, bool is32bit) {
             byte* target = stackalloc byte[60];
@@ -29,6 +28,11 @@ namespace TheLeftExit.Memory.RTTI {
         /// <returns>Array of names, or <see cref="null"/> if unsuccessful.</returns>
         public static string[] GetRTTIClassNames64(this MemorySource source, ulong address) {
             if (!source.TryRead(address, out UInt64 struct_addr)) return null;
+            return source.GetRTTIClassNamesByStructure64(struct_addr);
+            
+        }
+
+        public static string[] GetRTTIClassNamesByStructure64(this MemorySource source, ulong struct_addr) {
             if (!source.TryRead(struct_addr - 0x08, out UInt64 object_locator_ptr)) return null;
             if (!source.TryRead(object_locator_ptr + 0x14, out UInt64 base_offset)) return null;
             UInt64 base_address = object_locator_ptr - base_offset;
@@ -42,7 +46,7 @@ namespace TheLeftExit.Memory.RTTI {
             byte* base_class_name_buffer = stackalloc byte[60];
             base_class_name_buffer[0] = (byte)'?';
             Unsafe.Write(base_class_name_buffer, '?');
-            for(uint i = 0; i < base_class_count; i++) {
+            for (uint i = 0; i < base_class_count; i++) {
                 UInt64 base_class_ptr = base_class_array_ptr + 4 * i;
                 if (!source.TryRead(base_class_ptr, out UInt32 base_class_descriptor_offset)) return null;
                 UInt64 base_class_descriptor_ptr = base_address + base_class_descriptor_offset;
@@ -62,6 +66,10 @@ namespace TheLeftExit.Memory.RTTI {
         /// <returns>Array of names, or <see cref="null"/> if unsuccessful.</returns>
         public static string[] GetRTTIClassNames32(this MemorySource source, ulong address) {
             if (!source.TryRead(address, out UInt32 struct_addr)) return null;
+            return source.GetRTTIClassNamesByStructure32(struct_addr);
+        }
+
+        public static string[] GetRTTIClassNamesByStructure32(this MemorySource source, ulong struct_addr) {
             if (!source.TryRead(struct_addr - 0x04, out UInt32 object_locator_ptr)) return null;
             if (!source.TryRead(object_locator_ptr + 0x10, out UInt32 class_hierarchy_descriptor)) return null;
             if (!source.TryRead(class_hierarchy_descriptor + 0x08, out Int32 base_class_count)) return null;

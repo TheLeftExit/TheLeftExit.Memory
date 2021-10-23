@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace TheLeftExit.Memory.Sources {
     // Copy-based operations on remote memory.
-    public unsafe abstract class MemorySource {
+    public unsafe abstract class ReadOnlyMemorySource {
         public abstract bool TryRead(ulong address, int count, void* buffer);
 
         public bool TryRead<T>(ulong address, out T result) where T : unmanaged {
@@ -34,14 +34,14 @@ namespace TheLeftExit.Memory.Sources {
     }
 
     // Writing operations on remote memory.
-    public unsafe abstract class WriteableMemorySource : MemorySource {
+    public unsafe abstract class MemorySource : ReadOnlyMemorySource {
         public abstract bool TryWrite(ulong address, int count, void* buffer);
 
         public bool TryWrite<T>(ulong address, T value) where T : unmanaged {
             return TryWrite(address, sizeof(T), &value);
         }
 
-        public bool TryWrite<T>(ulong address, ref T value) where T : unmanaged {
+        public bool TryWrite<T>(ulong address, in T value) where T : unmanaged {
             fixed (void* ptr = &value)
                 return TryWrite(address, sizeof(T), ptr);
         }
@@ -53,7 +53,7 @@ namespace TheLeftExit.Memory.Sources {
     }
 
     // Reference-based operations on memory allocated by the program.
-    public unsafe abstract class LocalMemorySource : WriteableMemorySource {
+    public unsafe abstract class LocalMemorySource : MemorySource {
         public abstract Span<T> Slice<T>(ulong address, int count) where T : unmanaged;
 
         public ref T ReadRef<T>(ulong address) where T : unmanaged {

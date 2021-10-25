@@ -34,7 +34,6 @@ public partial class ProcessMemory : MemorySource, IDisposable {
     public readonly uint ProcessAccessRights;
     public readonly bool InheritHandle;
 
-
     public readonly IntPtr Handle;
     public readonly bool Is32Bit;
 
@@ -49,7 +48,7 @@ public partial class ProcessMemory : MemorySource, IDisposable {
 ```
 
 #### `RemoteStructure`
-A node in a structure hierarchy of a remote process. Allows you to easily branch between structures by scanning and caching offsets based on structure names. Works on MSVC RTTI (using methods from the static `RTTI` class.
+A node in a structure hierarchy of a remote process. Allows you to easily branch between structures by scanning and caching offsets based on structure names. Works on MSVC RTTI (using methods from the static `RTTI` class).
 ```cs
     public struct RemoteStructure : IRemoteStructure {
     public readonly ProcessMemory Source;

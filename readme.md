@@ -45,6 +45,7 @@ public partial class ProcessMemory : MemorySource, IDisposable {
 
     public RemoteStructure Root { get; }
     public Dictionary<(string, string, bool), int> Offsets { get; }
+}
 ```
 
 #### `RemoteStructure`

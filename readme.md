@@ -7,70 +7,65 @@ Available as a [NuGet package](https://www.nuget.org/packages/TheLeftExit.Memory
 
 ### Main features
 #### `MemorySource`
- - `TheLeftExit.Memory.Sources.ReadOnlyMemorySource`
- - `TheLeftExit.Memory.Sources.MemorySource`
- - `TheLeftExit.Memory.Sources.LocalMemorySource`
-
-These abstract classes allow wrapping remote memory sources for generic reading and writing:
+An abstract class that allows wrapping remote memory sources for generic reading and writing:
 ```cs
-bool ReadOnlyMemorySource.TryRead<T>(ulong address, out T result) where T : unmanaged;
-bool ReadOnlyMemorySource.TryRead<T>(ulong address, Span<T> buffer) where T : unmanagedl;
+public class MemorySource {
+    public T Read<T>(ulong address) where T : unmanaged;
+    public bool TryRead<T>(ulong address, out T result) where T : unmanaged;
+    public bool TryRead<T>(ulong address, Span<T> buffer) where T : unmanaged;
+    public bool TryRead(ulong address, int count, void* buffer);
+    protected abstract bool TryReadCore(ulong address, int count, void* buffer);
+    public virtual bool AllowRead { get; }
 
-bool MemorySource.TryWrite<T>(ulong address, T value) where T : unmanaged;
-bool ReadOnlyMemorySource.TryWrite<T>(ulong address, Span<T> buffer) where T : unmanagedl;
-
-ref T LocalMemorySource.ReadRef<T>(ulong address) where T : unmanaged;
+    public void Write(ulong address, T value) where T : unmanaged;
+    public bool TryWrite<T>(ulong address, T value) where T : unmanaged;
+    public bool TryWrite<T>(ulong address, Span<T> buffer) where T : unmanaged;
+    public bool TryWrite(ulong address, int count, void* buffer);
+    protected abstract bool TryWriteCore(ulong address, int count, void* buffer);
+    public virtual bool AllowWrite { get; }
+}
 ```
 
 #### `ProcessMemory`
- - `TheLeftExit.Memory.Sources.ProcessMemory`
-
-A `MemorySource` over a process that allows you to read or write data as primitive types, structures, or even tuples:  
-```(float X, float Y) Position = source.ReadValue<(float, float)>(address);```
-
-#### `CachedMemory`
- - `TheLeftExit.Memory.Sources.CachedMemory`
-
-A `LocalMemorySource` over `Memory<byte>` that allows you to store and access memory regions for complex operations, as well as cache process memory for use with existing `MemorySource` logic.
-
-#### `RTTIMethods`
+A `MemorySource` over a process that allows you to read its memory.
 ```cs
-string RTTIMethods.GetRTTIClassNames64(this ReadOnlyMemorySource source, ulong address);
-string RTTIMethods.GetRTTIClassNames32(this ReadOnlyMemorySource source, ulong address);
+public partial class ProcessMemory : MemorySource, IDisposable {
+    public readonly uint Id;
+    public readonly uint ProcessAccessRights;
+    public readonly bool InheritHandle;
+
+
+    public readonly IntPtr Handle;
+    public readonly bool Is32Bit;
+
+    public readonly ulong BaseAddress;
+    public readonly uint MainModuleSize;
+
+    public unsafe ProcessMemory(Process process, [uint rights], [bool inheritHandle]);
+    public unsafe ProcessMemory(int ProcessId, [uint rights], [bool inheritHandle]);
+
+    public RemoteStructure Root { get; }
+    public Dictionary<(string, string, bool), int> Offsets { get; }
 ```
-Allows you to query a structure for its RTTI-sourced class name.  
-The names you can find this way are the same names that tools like Cheat Engine, IDA or ReClass.NET will show you for the address or the pointer to it.
 
-To learn more about this technology, visit http://www.openrce.org/articles/full_view/23
-
-### `PointerQuery`
- - `TheLeftExit.Memory.Queries.PointerQuery`
-
-A simple iterator over a `ReadOnlyMemorySource` memory region. Allows you to scan remote memory for addresses matching a specific condition.
-
+#### `RemoteStructure`
+A node in a structure hierarchy of a remote process. Allows you to easily branch between structures by scanning and caching offsets based on structure names. Works on MSVC RTTI (using methods from the static `RTTI` class.
 ```cs
-public partial class PointerQuery {
-    public PointerQueryOptions Settings { get; set; }
-    public object Tag { get; set; }
-    public uint? Offset { get; set; }
-    public EventHandler<ProcessStepEventArgs> ProcessStep { get; set; }
+    public struct RemoteStructure : IRemoteStructure {
+    public readonly ProcessMemory Source;
+    public readonly ulong Address;
+    public readonly string Name;
 
-    public ulong? Run(ReadOnlyMemorySource source, ulong baseAddress);
+    public T Read<T>(int offset) where T : unmanaged;
+    public void Write<T>(int offset, T value) where T : unmanaged;
 
-    public static void AOB(object sender, ProcessStepEventArgs e);
-    public static void RTTIByRef(object sender, ProcessStepEventArgs e);
-    public static void RTTIByVal(object sender, ProcessStepEventArgs e);
-}
-
-public class ProcessStepEventArgs : EventArgs {
-    public ReadOnlyMemorySource Source { get; }
-    public ulong Address { get; }
-    public ProcessStepResult? Result { get; set; }
+    public RemoteStructure this[int offset, [bool byRef], [string name]] { get; }
+    public RemoteStructure this[string className, [bool byRef]] { get; }
 }
 ```
 
 ---
 
-There is more stuff, but it's mostly specific to my needs and/or too bothersome to document.
+There might be more stuff, but it's mostly specific to my needs and/or too bothersome to document.
 
 I often update this project as a I come up with more efficient ways to achieve its functionality, so expect breaking changes with most new versions.

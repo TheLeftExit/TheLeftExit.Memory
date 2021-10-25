@@ -3,8 +3,9 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
-    <Version>3.4.0</Version>
+    <Version>3.5.0</Version>
     <Authors>TheLeftExit</Authors>
+	<LangVersion>preview</LangVersion>
     <RepositoryUrl>https://github.com/TheLeftExit/TheLeftExit.Memory</RepositoryUrl>
     <Description>Simple and highly-optimized memory reading.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -12,11 +13,11 @@
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>UNLICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <AssemblyVersion>3.4.0.0</AssemblyVersion>
-    <FileVersion>3.4.0.0</FileVersion>
+    <AssemblyVersion>3.5.0.0</AssemblyVersion>
+    <FileVersion>3.5.0.0</FileVersion>
     <SignAssembly>false</SignAssembly>
     <ApplicationIcon />
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <StartupObject></StartupObject>
   </PropertyGroup>
 

@@ -1,1 +1,1 @@
-﻿[assembly: System.Runtime.Versioning.SupportedOSPlatform("windows5.1.2600")]
+﻿[assembly: System.Runtime.Versioning.SupportedOSPlatform("windows6.0.6000")]

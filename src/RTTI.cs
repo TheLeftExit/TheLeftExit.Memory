@@ -4,18 +4,17 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using TheLeftExit.Memory.Sources;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
 
-namespace TheLeftExit.Memory.RTTI {
-    public static unsafe class RTTIMethods {
+namespace TheLeftExit.Memory {
+    public static unsafe class RTTI {
         private const int BUFFER_SIZE = 60;
 
         // Pointer depth: 0 for vftable address, 1 for instance address, 2 for pointer to an instance.
 
-        public static string GetRTTIClassName64(this ReadOnlyMemorySource source, ulong address, sbyte pointerDepth = 1) {
+        public static string GetRTTIClassName64(this MemorySource source, ulong address, int pointerDepth = 1) {
             for (sbyte i = 0; i < pointerDepth; i++)
                 if (!source.TryRead(address, out address)) return null;
             if (!source.TryRead(address - 0x08, out ulong object_locator)) return null;
@@ -31,7 +30,7 @@ namespace TheLeftExit.Memory.RTTI {
             return len != 0 ? Encoding.UTF8.GetString(target, (int)len) : null;
         }
 
-        public static string GetRTTIClassName32(this ReadOnlyMemorySource source, ulong address, sbyte pointerDepth = 1) {
+        public static string GetRTTIClassName32(this MemorySource source, ulong address, int pointerDepth = 1) {
             for (sbyte i = 0; i < pointerDepth; i++)
                 if (!source.TryRead(address, out address)) return null;
             if (!source.TryRead(address - 0x04, out uint object_locator)) return null;

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace TheLeftExit.Memory {
     class Sandbox {
         static void Main(string[] args) {
-            Process growtopia = Process.GetProcessesByName("Growtopia").Single();
+            ProcessHandle growtopia = ProcessHandle.GetProcessesByName("Growtopia").Single();
             ProcessMemory mem = new ProcessMemory(growtopia);
 
             while (true) {

@@ -5,3 +5,4 @@ GetHandleInformation
 CloseHandle
 UnDecorateSymbolName
 IsWow64Process
+GetProcessId

@@ -1,4 +1,7 @@
-﻿using System;
+﻿// This is still a mess, I'll deal with it later...
+
+/*
+using System;
 using System.Collections.Generic;
 
 namespace TheLeftExit.Memory.Rtti {
@@ -20,7 +23,7 @@ namespace TheLeftExit.Memory.Rtti {
             };
         }
 
-        public static RemoteStructureRoot FromProcess(ProcessMemory processMemory) {
+        public static RemoteStructureRoot FromProcess(ProcessMemorySource processMemory) {
             bool is64Bit = ProcessHelper.Is64BitProcess(processMemory.Handle);
             return new() {
                 Source = processMemory,
@@ -110,3 +113,4 @@ namespace TheLeftExit.Memory.Rtti {
         public ulong Address { get; init; }
     }
 }
+*/

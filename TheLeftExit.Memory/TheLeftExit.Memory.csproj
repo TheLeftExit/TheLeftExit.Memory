@@ -5,7 +5,7 @@
     <Platforms>AnyCPU</Platforms>
     <Version>4.0.0</Version>
     <Authors>TheLeftExit</Authors>
-	<LangVersion>preview</LangVersion>
+	 <LangVersion>preview</LangVersion>
     <RepositoryUrl>https://github.com/TheLeftExit/TheLeftExit.Memory</RepositoryUrl>
     <Description>Simple and highly-optimized memory reading.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

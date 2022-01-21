@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 
 namespace TheLeftExit.Memory.Native {
-    // Method signatures mostly transcribed from CsWin32 outputs.
+    // Method signatures mostly transcribed from CsWin32 output.
     internal unsafe class NativeMethods {
         [DllImport("DbgHelp", ExactSpelling = true, SetLastError = true)]
         [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]

@@ -23,7 +23,7 @@ namespace TheLeftExit.Memory.Rtti {
         Reference = 2
     }
 
-    public delegate string GetClassName(MemorySource source, nuint address, PointerDepth depth = Instance);
+    public delegate string GetClassName(MemorySource source, nuint address, PointerDepth depth);
 
     public static unsafe class RttiExtensions {
         private const int BUFFER_SIZE = 60;
@@ -31,7 +31,7 @@ namespace TheLeftExit.Memory.Rtti {
         /// <summary>
         /// Attempts to retrieve an RTTI class name for a structure located at a given address in a 64-bit MSVC application. If no such name is found, returns null.
         /// </summary>
-        public static string GetClassName64(this MemorySource source, nuint address, PointerDepth depth = Instance) {
+        public static string GetClassName64(this MemorySource source, nuint address, PointerDepth depth) {
             for (PointerDepth i = depth; i > VTable; i--)
                 if (!source.TryRead(address, out address)) return null;
 
@@ -51,7 +51,7 @@ namespace TheLeftExit.Memory.Rtti {
         /// <summary>
         /// Attempts to retrieve an RTTI class name for a structure located at a given address in a 32-bit MSVC application. If no such name is found, returns null.
         /// </summary>
-        public static string GetClassName32(this MemorySource source, nuint address, PointerDepth depth = Instance) {
+        public static string GetClassName32(this MemorySource source, nuint address, PointerDepth depth) {
             for (PointerDepth i = depth; i > VTable; i--)
                 if (!source.TryRead(address, out address)) return null;
 

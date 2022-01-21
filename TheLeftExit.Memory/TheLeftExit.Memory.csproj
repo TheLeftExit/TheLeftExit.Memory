@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
     <Version>3.5.0</Version>
     <Authors>TheLeftExit</Authors>
@@ -10,14 +10,13 @@
     <Description>Simple and highly-optimized memory reading.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl></PackageProjectUrl>
-    <PackageLicenseExpression></PackageLicenseExpression>
-    <PackageLicenseFile>UNLICENSE</PackageLicenseFile>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <AssemblyVersion>3.5.0.0</AssemblyVersion>
     <FileVersion>3.5.0.0</FileVersion>
     <SignAssembly>false</SignAssembly>
     <ApplicationIcon />
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <StartupObject></StartupObject>
   </PropertyGroup>
 
@@ -38,17 +37,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.1.560-beta">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <Compile Remove="Examples\RttiWalker.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="UNLICENSE">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
+    <None Include="Examples\RttiWalker.cs" />
   </ItemGroup>
 
 </Project>

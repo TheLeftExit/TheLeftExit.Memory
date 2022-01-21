@@ -1,7 +1,7 @@
 ﻿### TheLeftExit.Memory
 One of the many libraries focused on reading process memory.
 
-**TheLeftExit.Memory** is designed to be compact, fast and extremely memory-efficient, making extensive use of unsafe context.
+**TheLeftExit.Memory** is designed to be compact, fast and extremely memory-efficient by means of unsafe context.
 
 Available as a [NuGet package](https://www.nuget.org/packages/TheLeftExit.Memory/).
 
@@ -9,63 +9,69 @@ Available as a [NuGet package](https://www.nuget.org/packages/TheLeftExit.Memory
 #### `MemorySource`
 An abstract class that allows wrapping remote memory sources for generic reading and writing:
 ```cs
-public class MemorySource {
-    public T Read<T>(ulong address) where T : unmanaged;
-    public bool TryRead<T>(ulong address, out T result) where T : unmanaged;
-    public bool TryRead<T>(ulong address, Span<T> buffer) where T : unmanaged;
-    public bool TryRead(ulong address, int count, void* buffer);
-    protected abstract bool TryReadCore(ulong address, int count, void* buffer);
-    public virtual bool AllowRead { get; }
+public abstract class MemorySource {
+    protected abstract bool TryReadCore(nuint address, nuint count, void* buffer);
+    protected abstract bool TryWriteCore(nuint address, nuint count, void* buffer);
+    public bool TryRead(nuint address, nuint count, void* buffer);
+    public bool TryWrite(nuint address, nuint count, void* buffer);
+    public bool TryWrite<T>(nuint address, Span<T> buffer) where T : unmanaged;
+    public bool TryRead<T>(nuint address, Span<T> buffer) where T : unmanaged;
 
-    public void Write(ulong address, T value) where T : unmanaged;
-    public bool TryWrite<T>(ulong address, T value) where T : unmanaged;
-    public bool TryWrite<T>(ulong address, Span<T> buffer) where T : unmanaged;
-    public bool TryWrite(ulong address, int count, void* buffer);
-    protected abstract bool TryWriteCore(ulong address, int count, void* buffer);
-    public virtual bool AllowWrite { get; }
+    public bool TryRead<T>(nuint address, out T result) where T : unmanaged;
+    public T Read<T>(nuint address) where T : unmanaged;
+
+    public bool TryWrite<T>(nuint address, T value) where T : unmanaged;
+    public void Write<T>(nuint address, T value) where T : unmanaged;
+
+    public bool TryWrite<T>(nuint address, in T value) where T : unmanaged;
+    public void Write<T>(nuint address, in T value) where T : unmanaged;
 }
 ```
 
 #### `ProcessMemory`
-A `MemorySource` over a process that allows you to read its memory.
+A `MemorySource` over a process that allows you to read its memory using [ReadProcessMemory](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-readprocessmemory)/[WriteProcessMemory](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-writeprocessmemory) API.
 ```cs
-public partial class ProcessMemory : MemorySource, IDisposable {
-    public readonly uint Id;
-    public readonly uint ProcessAccessRights;
-    public readonly bool InheritHandle;
+public class ProcessMemory : MemorySource {
+    public HANDLE Handle { get; }
+    public ProcessMemory(HANDLE handle);
+}
 
-    public readonly IntPtr Handle;
-    public readonly bool Is32Bit;
+public readonly struct HANDLE {
+    public readonly IntPtr Value;
 
-    public readonly ulong BaseAddress;
-    public readonly uint MainModuleSize;
+    public static implicit operator IntPtr(HANDLE handle);
+    public static implicit operator HANDLE(IntPtr value);
 
-    public unsafe ProcessMemory(Process process, [uint rights], [bool inheritHandle]);
-    public unsafe ProcessMemory(int ProcessId, [uint rights], [bool inheritHandle]);
+    public static HANDLE OpenProcess(uint dwProcessId);
+    public static HANDLE OpenProcess(PROCESS_ACCESS_RIGHTS dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
 
-    public RemoteStructure Root { get; }
-    public Dictionary<(string, string, bool), int> Offsets { get; }
+    public bool ReadProcessMemory(void* lpBaseAddress, void* lpBuffer, nuint nSize, out nuint lpNumberOfBytesRead);
+    public bool WriteProcessMemory(void* lpBaseAddress, void* lpBuffer, nuint nSize, out nuint lpNumberOfBytesWritten);
+
+    public bool? IsWow64Process();
+    public bool CloseHandle();
+    public uint GetProcessId();
+    public nuint GetBaseAddress();
 }
 ```
 
-#### `RemoteStructure`
-A node in a structure hierarchy of a remote process. Allows you to easily branch between structures by scanning and caching offsets based on structure names. Works on MSVC RTTI (using methods from the static `RTTI` class).
+#### `RttiExtensions`
+Methods that can be used to retrieve RTTI class names in MSVC applications.
 ```cs
-public struct RemoteStructure : IRemoteStructure {
-    public readonly ProcessMemory Source;
-    public readonly ulong Address;
-    public readonly string Name;
+public static class RttiExtensions {
+    public static string GetClassName64(this MemorySource source, nuint address, PointerDepth depth = PointerDepth.Instance);
+    public static string GetClassName32(this MemorySource source, nuint address, PointerDepth depth = PointerDepth.Instance);
+}
 
-    public T Read<T>(int offset) where T : unmanaged;
-    public void Write<T>(int offset, T value) where T : unmanaged;
-
-    public RemoteStructure this[int offset, [bool byRef], [string name]] { get; }
-    public RemoteStructure this[string className, [bool byRef]] { get; }
+public enum PointerDepth {
+    VTable = 0,
+    Instance = 1,
+    Reference = 2
 }
 ```
 
 ---
 
-There might be more stuff, but it's mostly specific to my needs and/or too bothersome to document.
+Implementing more robust structures based on those primitives is left to end-user, as the implementation and API may differ greatly depending on the usage scenario.
 
-I often update this project as a I come up with more efficient ways to achieve its functionality, so expect breaking changes with most new versions.
+An example of such structure can be found in [Examples/RttiWalker.cs](TheLeftExit.Memory/Examples/RttiWalker) (not included in the build).

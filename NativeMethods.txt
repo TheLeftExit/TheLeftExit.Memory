@@ -1,7 +1,0 @@
-﻿OpenProcess
-ReadProcessMemory
-WriteProcessMemory
-GetHandleInformation
-CloseHandle
-UnDecorateSymbolName
-IsWow64Process

@@ -3,13 +3,14 @@ using System.Runtime.CompilerServices;
 
 namespace TheLeftExit.Memory.Native {
     /// <summary>
-    /// Exposes process handle API from <c>Kernel32.dll</c>.<br/>
-    /// Can be created using <see cref="HANDLE.OpenProcess"/>, or implicitly cast from <see cref="IntPtr"/>.
+    /// Exposes process handle API from <c>Kernel32.dll</c> that can be useful for RTTI retrieval.<br/>
+    /// Can be created using <see cref="HANDLE.OpenProcess(uint)"/>, or implicitly cast from <see cref="IntPtr"/>.
     /// </summary>
     public readonly unsafe struct HANDLE {
         public readonly IntPtr Value;
-        public static implicit operator IntPtr(HANDLE handle) => Unsafe.As<HANDLE, IntPtr>(ref handle);
-        public static implicit operator HANDLE(IntPtr value) => Unsafe.As<IntPtr, HANDLE>(ref value);
+        public HANDLE(IntPtr value) => Value = value;
+        public static implicit operator IntPtr(HANDLE handle) => handle.Value;
+        public static implicit operator HANDLE(IntPtr value) => new HANDLE(value);
 
         public static HANDLE OpenProcess(uint dwProcessId) =>
             OpenProcess(PROCESS_ACCESS_RIGHTS.PROCESS_ALL_ACCESS, true, dwProcessId);
@@ -32,7 +33,7 @@ namespace TheLeftExit.Memory.Native {
         public uint GetProcessId() =>
             NativeMethods.GetProcessId(this);
 
-        public nuint GetBaseAddress() =>
+        public nuint GetMainModuleBaseAddress() =>
             (nuint)System.Diagnostics.Process.GetProcessById((int)GetProcessId()).MainModule.BaseAddress.ToPointer();
     }
 }

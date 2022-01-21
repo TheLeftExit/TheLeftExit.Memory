@@ -7,13 +7,9 @@ namespace TheLeftExit.Memory.Sources {
     /// Abstract class for generically typed read/write operations on a remote memory source.
     /// </summary>
     public unsafe abstract class MemorySource {
-        // Core implementation on pointers
-        protected abstract bool TryReadCore(nuint address, nuint count, void* buffer);
-        protected abstract bool TryWriteCore(nuint address, nuint count, void* buffer);
-        public bool TryRead(nuint address, nuint count, void* buffer) => TryReadCore(address, count, buffer);
-        public bool TryWrite(nuint address, nuint count, void* buffer) => TryWriteCore(address, count, buffer);
+        public abstract bool TryRead(nuint address, nuint byteCount, void* buffer);
+        public abstract bool TryWrite(nuint address, nuint byteCount, void* buffer);
 
-        // Generics
         public bool TryRead<T>(nuint address, out T result) where T : unmanaged {
             fixed (void* ptr = &result)
                 return TryRead(address, (nuint)sizeof(T), ptr);
@@ -35,7 +31,6 @@ namespace TheLeftExit.Memory.Sources {
             if (!TryWrite(address, value)) throw new MemoryException();
         }
 
-        // Spans
         public bool TryWrite<T>(nuint address, Span<T> buffer) where T : unmanaged {
             fixed (void* ptr = buffer)
                 return TryWrite(address, (nuint)buffer.Length * (nuint)sizeof(T), ptr);

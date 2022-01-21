@@ -6,7 +6,7 @@ using static TheLeftExit.Memory.Rtti.PointerDepth;
 
 namespace TheLeftExit.Memory.Rtti {
     /// <summary>
-    /// Specifies how an address relates to a structure in memory.
+    /// Specifies how an address relates to a structure in memory.<br/>
     /// </summary>
     public enum PointerDepth {
         /// <summary>
@@ -29,7 +29,7 @@ namespace TheLeftExit.Memory.Rtti {
         private const int BUFFER_SIZE = 60;
 
         /// <summary>
-        /// Attempts to retrieve an RTTI class name for a structure located at a given address in a 64-bit application. If no such name is found, returns null.
+        /// Attempts to retrieve an RTTI class name for a structure located at a given address in a 64-bit MSVC application. If no such name is found, returns null.
         /// </summary>
         public static string GetClassName64(this MemorySource source, nuint address, PointerDepth depth = Instance) {
             for (PointerDepth i = depth; i > VTable; i--)
@@ -49,7 +49,7 @@ namespace TheLeftExit.Memory.Rtti {
         }
 
         /// <summary>
-        /// Attempts to retrieve an RTTI class name for a structure located at a given address in a 32-bit application. If no such name is found, returns null.
+        /// Attempts to retrieve an RTTI class name for a structure located at a given address in a 32-bit MSVC application. If no such name is found, returns null.
         /// </summary>
         public static string GetClassName32(this MemorySource source, nuint address, PointerDepth depth = Instance) {
             for (PointerDepth i = depth; i > VTable; i--)

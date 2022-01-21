@@ -10,8 +10,7 @@
     <Description>Simple and highly-optimized memory reading.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl></PackageProjectUrl>
-    <PackageLicenseExpression></PackageLicenseExpression>
-    <PackageLicenseFile>UNLICENSE</PackageLicenseFile>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <AssemblyVersion>3.5.0.0</AssemblyVersion>
     <FileVersion>3.5.0.0</FileVersion>
@@ -36,5 +35,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Examples\RttiWalker.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Examples\RttiWalker.cs" />
+  </ItemGroup>
 
 </Project>

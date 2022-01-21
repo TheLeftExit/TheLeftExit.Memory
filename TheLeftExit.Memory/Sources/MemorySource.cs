@@ -1,6 +1,8 @@
 ﻿using System;
 
 namespace TheLeftExit.Memory.Sources {
+    public class MemoryException : ApplicationException { }
+
     /// <summary>
     /// Abstract class for generically typed read/write operations on a remote memory source.
     /// </summary>
@@ -17,7 +19,7 @@ namespace TheLeftExit.Memory.Sources {
                 return TryRead(address, (nuint)sizeof(T), ptr);
         }
         public T Read<T>(nuint address) where T : unmanaged {
-            return TryRead(address, out T result) ? result : throw new ApplicationException($"Unable to read at {address:X}.");
+            return TryRead(address, out T result) ? result : throw new MemoryException();
         }
         public bool TryWrite<T>(nuint address, T value) where T : unmanaged {
             return TryWrite(address, (nuint)sizeof(T), &value);
@@ -27,10 +29,10 @@ namespace TheLeftExit.Memory.Sources {
                 return TryWrite(address, (nuint)sizeof(T), ptr);
         }
         public void Write<T>(nuint address, T value) where T : unmanaged {
-            if (!TryWrite(address, value)) throw new ApplicationException($"Unable to write at {address:X}.");
+            if (!TryWrite(address, value)) throw new MemoryException();
         }
         public void Write<T>(nuint address, in T value) where T : unmanaged {
-            if (!TryWrite(address, value)) throw new ApplicationException($"Unable to write at {address:X}.");
+            if (!TryWrite(address, value)) throw new MemoryException();
         }
 
         // Spans
